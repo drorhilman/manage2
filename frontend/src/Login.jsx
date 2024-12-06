@@ -1,47 +1,20 @@
 import React from 'react';
-import { useToast } from '@chakra-ui/react';
-import { auth, provider, signInWithPopup } from './firebase';
-import { Button, FormControl, FormLabel, Input, VStack } from '@chakra-ui/react';
+import { Button, Center, Text } from '@chakra-ui/react';
+import { auth } from './firebase';
+import firebase from 'firebase/app';
 
-const Login = () => {
-  const toast = useToast();
-
-  const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, provider);
-      toast({
-        title: "Login Successful",
-        description: "You have logged in successfully.",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: "Login Failed",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    }
+function Login() {
+  const signInWithGoogle = () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider);
   };
 
   return (
-    <VStack spacing={4} align="stretch">
-      <FormControl>
-        <FormLabel>Email</FormLabel>
-        <Input type="email" placeholder="Enter your email" />
-      </FormControl>
-      <FormControl>
-        <FormLabel>Password</FormLabel>
-        <Input type="password" placeholder="Enter your password" />
-      </FormControl>
-      <Button colorScheme="teal" onClick={handleLogin}>
-        Login with Google
-      </Button>
-    </VStack>
+    <Center height="100vh" flexDirection="column">
+      <Text fontSize="2xl" mb={4}>Sign in to Business Management</Text>
+      <Button onClick={signInWithGoogle}>Sign in with Google</Button>
+    </Center>
   );
-};
+}
 
 export default Login;
