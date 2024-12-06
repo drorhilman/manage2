@@ -1,62 +1,128 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { Box, Button, Input, Heading, List, ListItem, Spinner, useToast } from '@chakra-ui/react';
 
 const JobDescriptions = () => {
   const [jobDescriptions, setJobDescriptions] = useState([]);
   const [newJobDescription, setNewJobDescription] = useState('');
+  const [loading, setLoading] = useState(true);
+  const toast = useToast();
 
   const jobDescriptionsCollectionRef = collection(db, 'jobDescriptions');
 
   const getJobDescriptions = async () => {
-    const data = await getDocs(jobDescriptionsCollectionRef);
-    setJobDescriptions(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+    setLoading(true);
+    try {
+      const data = await getDocs(jobDescriptionsCollectionRef);
+      setJobDescriptions(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+    } catch (error) {
+      toast({
+        title: "Error loading job descriptions.",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const createJobDescription = async () => {
-    await addDoc(jobDescriptionsCollectionRef, { description: newJobDescription });
-    getJobDescriptions();
+    try {
+      await addDoc(jobDescriptionsCollectionRef, { description: newJobDescription });
+      getJobDescriptions();
+      toast({
+        title: "Job description added.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "Error adding job description.",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   const updateJobDescription = async (id, updatedDescription) => {
-    const jobDescriptionDoc = doc(db, 'jobDescriptions', id);
-    await updateDoc(jobDescriptionDoc, { description: updatedDescription });
-    getJobDescriptions();
+    try {
+      const jobDescriptionDoc = doc(db, 'jobDescriptions', id);
+      await updateDoc(jobDescriptionDoc, { description: updatedDescription });
+      getJobDescriptions();
+      toast({
+        title: "Job description updated.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "Error updating job description.",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   const deleteJobDescription = async (id) => {
-    const jobDescriptionDoc = doc(db, 'jobDescriptions', id);
-    await deleteDoc(jobDescriptionDoc);
-    getJobDescriptions();
+    try {
+      const jobDescriptionDoc = doc(db, 'jobDescriptions', id);
+      await deleteDoc(jobDescriptionDoc);
+      getJobDescriptions();
+      toast({
+        title: "Job description deleted.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "Error deleting job description.",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   useEffect(() => {
     getJobDescriptions();
   }, []);
 
+  if (loading) {
+    return <Spinner />;
+  }
+
   return (
-    <div>
-      <h1>Job Descriptions</h1>
-      <input
-        type="text"
+    <Box>
+      <Heading>Job Descriptions</Heading>
+      <Input
         placeholder="New Job Description"
         value={newJobDescription}
         onChange={(e) => setNewJobDescription(e.target.value)}
       />
-      <button onClick={createJobDescription}>Add Job Description</button>
-      <ul>
+      <Button onClick={createJobDescription}>Add Job Description</Button>
+      <List>
         {jobDescriptions.map((jobDescription) => (
-          <li key={jobDescription.id}>
-            <input
-              type="text"
+          <ListItem key={jobDescription.id}>
+            <Input
               value={jobDescription.description}
               onChange={(e) => updateJobDescription(jobDescription.id, e.target.value)}
             />
-            <button onClick={() => deleteJobDescription(jobDescription.id)}>Delete</button>
-          </li>
+            <Button onClick={() => deleteJobDescription(jobDescription.id)}>Delete</Button>
+          </ListItem>
         ))}
-      </ul>
-    </div>
+      </List>
+    </Box>
   );
 };
 

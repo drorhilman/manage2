@@ -1,108 +1,159 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { Box, Button, Input, Heading, List, ListItem, Spinner, useToast } from '@chakra-ui/react';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [newProduct, setNewProduct] = useState({ name: '', price: '', active: true });
   const [editingProduct, setEditingProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage] = useState(10);
+  const toast = useToast();
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const productsCollection = collection(db, 'products');
-      const productsSnapshot = await getDocs(productsCollection);
-      const productsList = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setProducts(productsList);
+      setLoading(true);
+      try {
+        const productsCollection = collection(db, 'products');
+        const productsSnapshot = await getDocs(productsCollection);
+        const productsList = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setProducts(productsList);
+      } catch (error) {
+        toast({
+          title: "Error loading products.",
+          description: error.message,
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchProducts();
   }, []);
 
   const handleAddProduct = async () => {
-    const productsCollection = collection(db, 'products');
-    await addDoc(productsCollection, newProduct);
-    setNewProduct({ name: '', price: '', active: true });
-    fetchProducts();
+    try {
+      const productsCollection = collection(db, 'products');
+      await addDoc(productsCollection, newProduct);
+      setNewProduct({ name: '', price: '', active: true });
+      toast({
+        title: "Product added.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      fetchProducts();
+    } catch (error) {
+      toast({
+        title: "Error adding product.",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   const handleUpdateProduct = async (id) => {
-    const productDoc = doc(db, 'products', id);
-    await updateDoc(productDoc, editingProduct);
-    setEditingProduct(null);
-    fetchProducts();
+    try {
+      const productDoc = doc(db, 'products', id);
+      await updateDoc(productDoc, editingProduct);
+      setEditingProduct(null);
+      toast({
+        title: "Product updated.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      fetchProducts();
+    } catch (error) {
+      toast({
+        title: "Error updating product.",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   const handleDeleteProduct = async (id) => {
-    const productDoc = doc(db, 'products', id);
-    await deleteDoc(productDoc);
-    fetchProducts();
+    try {
+      const productDoc = doc(db, 'products', id);
+      await deleteDoc(productDoc);
+      toast({
+        title: "Product deleted.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      fetchProducts();
+    } catch (error) {
+      toast({
+        title: "Error deleting product.",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   const handleToggleActive = async (id, currentStatus) => {
-    const productDoc = doc(db, 'products', id);
-    await updateDoc(productDoc, { active: !currentStatus });
-    fetchProducts();
+    try {
+      const productDoc = doc(db, 'products', id);
+      await updateDoc(productDoc, { active: !currentStatus });
+      fetchProducts();
+    } catch (error) {
+      toast({
+        title: "Error toggling product status.",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  if (loading) {
+    return <Spinner />;
+  }
+
   return (
-    <div>
-      <h1>Products</h1>
-      <input
-        type="text"
+    <Box>
+      <Heading>Products</Heading>
+      <Input
         placeholder="Search products..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
-      <ul>
-        {filteredProducts.map(product => (
-          <li key={product.id}>
+      <List>
+        {currentProducts.map(product => (
+          <ListItem key={product.id}>
             {product.name} - ${product.price} - {product.active ? 'Active' : 'Inactive'}
-            <button onClick={() => handleToggleActive(product.id, product.active)}>
-              Toggle Active
-            </button>
-            <button onClick={() => setEditingProduct(product)}>Edit</button>
-            <button onClick={() => handleDeleteProduct(product.id)}>Delete</button>
-          </li>
+            <Button onClick={() => handleToggleActive(product.id, product.active)}>Toggle Active</Button>
+            <Button onClick={() => setEditingProduct(product)}>Edit</Button>
+            <Button onClick={() => handleDeleteProduct(product.id)}>Delete</Button>
+          </ListItem>
         ))}
-      </ul>
-      <div>
-        <h2>{editingProduct ? 'Edit Product' : 'Add Product'}</h2>
-        <input
-          type="text"
-          placeholder="Name"
-          value={editingProduct ? editingProduct.name : newProduct.name}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (editingProduct) {
-              setEditingProduct({ ...editingProduct, name: value });
-            } else {
-              setNewProduct({ ...newProduct, name: value });
-            }
-          }}
-        />
-        <input
-          type="text"
-          placeholder="Price"
-          value={editingProduct ? editingProduct.price : newProduct.price}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (editingProduct) {
-              setEditingProduct({ ...editingProduct, price: value });
-            } else {
-              setNewProduct({ ...newProduct, price: value });
-            }
-          }}
-        />
-        <button onClick={editingProduct ? () => handleUpdateProduct(editingProduct.id) : handleAddProduct}>
-          {editingProduct ? 'Update' : 'Add'}
-        </button>
-      </div>
-    </div>
+      </List>
+      <Button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>Previous</Button>
+      <Button onClick={() => setCurrentPage(currentPage + 1)} disabled={indexOfLastProduct >= filteredProducts.length}>Next</Button>
+    </Box>
   );
 };
 
