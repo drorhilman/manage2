@@ -20,6 +20,11 @@
 - Set up security rules for whitelist verification
 - Implement custom claims for role-based access
 
+
+### US-1.5: Google Authentication for Local Development
+As a developer, I want to be able to override the login hen running locally, so i can jump right into the view of the product,
+without having to login every time.
+
 ## Epic: Customer Management
 
 ### US-2: Customer List View
