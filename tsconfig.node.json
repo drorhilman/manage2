@@ -29,5 +29,5 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["src"]
+  "include": ["src", "*/components/ui/button.tsx"]
 }

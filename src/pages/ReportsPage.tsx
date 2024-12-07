@@ -1,7 +1,5 @@
-import React from 'react';
+function ReportsPage() {
+  return <div>ReportsPage (Empty for now)</div>
+}
 
-const ReportsPage: React.FC = () => {
-  return <div>Reports Page</div>;
-};
-
-export default ReportsPage;
+export default ReportsPage

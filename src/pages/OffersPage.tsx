@@ -1,7 +1,5 @@
-import React from 'react';
+function OffersPage() {
+  return <div>OffersPage (Empty for now)</div>
+}
 
-const OffersPage: React.FC = () => {
-  return <div>Offers Page</div>;
-};
-
-export default OffersPage;
+export default OffersPage
