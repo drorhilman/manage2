@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Button, Input, Table, Thead, Tbody, Tr, Th, Td, Spinner, useToast } from '@chakra-ui/react';
 import { fetchOffers, createOffer, updateOffer, deleteOffer } from '../api'; // Assume these API functions are defined
+import { toaster } from '../components/ui/toaster';
 
 const Offers = () => {
   const [offers, setOffers] = useState([]);
   const [offerDetails, setOfferDetails] = useState({ description: '', applicableCustomers: [] });
   const [editingOfferId, setEditingOfferId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const toast = useToast();
 
   useEffect(() => {
     const loadOffers = async () => {
@@ -16,12 +15,9 @@ const Offers = () => {
         const offersData = await fetchOffers();
         setOffers(offersData);
       } catch (error) {
-        toast({
+        toaster.error({
           title: "Error loading offers.",
           description: error.message,
-          status: "error",
-          duration: 5000,
-          isClosable: true,
         });
       } finally {
         setLoading(false);
@@ -41,19 +37,13 @@ const Offers = () => {
       setEditingOfferId(null);
       const offersData = await fetchOffers();
       setOffers(offersData);
-      toast({
+      toaster.success({
         title: "Offer saved.",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
       });
     } catch (error) {
-      toast({
+      toaster.error({
         title: "Error saving offer.",
         description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
       });
     }
   };
@@ -68,59 +58,57 @@ const Offers = () => {
       await deleteOffer(offerId);
       const offersData = await fetchOffers();
       setOffers(offersData);
-      toast({
+      toaster.success({
         title: "Offer deleted.",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
       });
     } catch (error) {
-      toast({
+      toaster.error({
         title: "Error deleting offer.",
         description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
       });
     }
   };
 
   if (loading) {
-    return <Spinner />;
+    return <div>Loading...</div>;
   }
 
   return (
-    <Box>
-      <Input
-        placeholder="Offer Description"
-        value={offerDetails.description}
-        onChange={(e) => setOfferDetails({ ...offerDetails, description: e.target.value })}
-      />
-      <Button onClick={handleCreateOrUpdateOffer}>
+    <div>
+      <div>
+        <label>Description</label>
+        <input
+          placeholder="Offer Description"
+          value={offerDetails.description}
+          onChange={(e) => setOfferDetails({ ...offerDetails, description: e.target.value })}
+          className="border rounded p-2"
+        />
+      </div>
+      <button className="bg-blue-500 text-white p-2 rounded" onClick={handleCreateOrUpdateOffer}>
         {editingOfferId ? 'Update Offer' : 'Create Offer'}
-      </Button>
-      <Table>
-        <Thead>
-          <Tr>
-            <Th>Description</Th>
-            <Th>Applicable Customers</Th>
-            <Th>Actions</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
+      </button>
+      <table className="min-w-full border-collapse border border-gray-200">
+        <thead>
+          <tr>
+            <th className="border border-gray-300">Description</th>
+            <th className="border border-gray-300">Applicable Customers</th>
+            <th className="border border-gray-300">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
           {offers.map((offer) => (
-            <Tr key={offer.id}>
-              <Td>{offer.description}</Td>
-              <Td>{offer.applicableCustomers.join(', ')}</Td>
-              <Td>
-                <Button onClick={() => handleEditOffer(offer)}>Edit</Button>
-                <Button onClick={() => handleDeleteOffer(offer.id)}>Delete</Button>
-              </Td>
-            </Tr>
+            <tr key={offer.id}>
+              <td className="border border-gray-300">{offer.description}</td>
+              <td className="border border-gray-300">{offer.applicableCustomers.join(', ')}</td>
+              <td className="border border-gray-300">
+                <button className="bg-yellow-500 text-white p-1 rounded" onClick={() => handleEditOffer(offer)}>Edit</button>
+                <button className="bg-red-500 text-white p-1 rounded" onClick={() => handleDeleteOffer(offer.id)}>Delete</button>
+              </td>
+            </tr>
           ))}
-        </Tbody>
-      </Table>
-    </Box>
+        </tbody>
+      </table>
+    </div>
   );
 };
 

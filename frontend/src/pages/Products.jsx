@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { Box, Button, Input, Heading, List, ListItem, Spinner, useToast } from '@chakra-ui/react';
+import { Toaster, toaster } from '../components/ui/toaster';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -11,7 +11,6 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [productsPerPage] = useState(10);
-  const toast = useToast();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -22,10 +21,10 @@ const Products = () => {
         const productsList = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setProducts(productsList);
       } catch (error) {
-        toast({
+        toaster.create({
           title: "Error loading products.",
           description: error.message,
-          status: "error",
+          type: "error",
           duration: 5000,
           isClosable: true,
         });
@@ -42,18 +41,18 @@ const Products = () => {
       const productsCollection = collection(db, 'products');
       await addDoc(productsCollection, newProduct);
       setNewProduct({ name: '', price: '', active: true });
-      toast({
+      toaster.create({
         title: "Product added.",
-        status: "success",
+        type: "success",
         duration: 5000,
         isClosable: true,
       });
       fetchProducts();
     } catch (error) {
-      toast({
+      toaster.create({
         title: "Error adding product.",
         description: error.message,
-        status: "error",
+        type: "error",
         duration: 5000,
         isClosable: true,
       });
@@ -65,18 +64,18 @@ const Products = () => {
       const productDoc = doc(db, 'products', id);
       await updateDoc(productDoc, editingProduct);
       setEditingProduct(null);
-      toast({
+      toaster.create({
         title: "Product updated.",
-        status: "success",
+        type: "success",
         duration: 5000,
         isClosable: true,
       });
       fetchProducts();
     } catch (error) {
-      toast({
+      toaster.create({
         title: "Error updating product.",
         description: error.message,
-        status: "error",
+        type: "error",
         duration: 5000,
         isClosable: true,
       });
@@ -87,18 +86,18 @@ const Products = () => {
     try {
       const productDoc = doc(db, 'products', id);
       await deleteDoc(productDoc);
-      toast({
+      toaster.create({
         title: "Product deleted.",
-        status: "success",
+        type: "success",
         duration: 5000,
         isClosable: true,
       });
       fetchProducts();
     } catch (error) {
-      toast({
+      toaster.create({
         title: "Error deleting product.",
         description: error.message,
-        status: "error",
+        type: "error",
         duration: 5000,
         isClosable: true,
       });
@@ -111,10 +110,10 @@ const Products = () => {
       await updateDoc(productDoc, { active: !currentStatus });
       fetchProducts();
     } catch (error) {
-      toast({
+      toaster.create({
         title: "Error toggling product status.",
         description: error.message,
-        status: "error",
+        type: "error",
         duration: 5000,
         isClosable: true,
       });
@@ -130,30 +129,32 @@ const Products = () => {
   const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
 
   if (loading) {
-    return <Spinner />;
+    return <div>Loading...</div>;
   }
 
   return (
-    <Box>
-      <Heading>Products</Heading>
-      <Input
+    <div>
+      <h1>Products</h1>
+      <input
         placeholder="Search products..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
+        className="border rounded p-2"
       />
-      <List>
+      <ul>
         {currentProducts.map(product => (
-          <ListItem key={product.id}>
+          <li key={product.id}>
             {product.name} - ${product.price} - {product.active ? 'Active' : 'Inactive'}
-            <Button onClick={() => handleToggleActive(product.id, product.active)}>Toggle Active</Button>
-            <Button onClick={() => setEditingProduct(product)}>Edit</Button>
-            <Button onClick={() => handleDeleteProduct(product.id)}>Delete</Button>
-          </ListItem>
+            <button className="bg-yellow-500 text-white p-1 rounded" onClick={() => handleToggleActive(product.id, product.active)}>Toggle Active</button>
+            <button className="bg-blue-500 text-white p-1 rounded" onClick={() => setEditingProduct(product)}>Edit</button>
+            <button className="bg-red-500 text-white p-1 rounded" onClick={() => handleDeleteProduct(product.id)}>Delete</button>
+          </li>
         ))}
-      </List>
-      <Button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>Previous</Button>
-      <Button onClick={() => setCurrentPage(currentPage + 1)} disabled={indexOfLastProduct >= filteredProducts.length}>Next</Button>
-    </Box>
+      </ul>
+      <button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>Previous</button>
+      <button onClick={() => setCurrentPage(currentPage + 1)} disabled={indexOfLastProduct >= filteredProducts.length}>Next</button>
+      <Toaster />
+    </div>
   );
 };
 

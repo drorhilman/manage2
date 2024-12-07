@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Button, Select, FormControl, FormLabel, Table, Thead, Tbody, Tr, Th, Td, Spinner, useToast } from '@chakra-ui/react';
 import { fetchReportsData } from '../api'; // Assume this API function is defined
+import { toaster } from '../components/ui/toaster';
 
 const Reports = () => {
   const [reportsData, setReportsData] = useState([]);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [selectedCustomer, setSelectedCustomer] = useState('');
   const [loading, setLoading] = useState(true);
-  const toast = useToast();
 
   useEffect(() => {
     const loadReports = async () => {
@@ -16,12 +15,9 @@ const Reports = () => {
         const data = await fetchReportsData(dateRange, selectedCustomer);
         setReportsData(data);
       } catch (error) {
-        toast({
+        toaster.error({
           title: "Error loading reports.",
           description: error.message,
-          status: "error",
-          duration: 5000,
-          isClosable: true,
         });
       } finally {
         setLoading(false);
@@ -32,61 +28,62 @@ const Reports = () => {
 
   const handleGenerateReport = () => {
     // Logic to generate report based on selected filters
-    toast({
+    toaster.success({
       title: "Report generated.",
-      status: "success",
-      duration: 5000,
-      isClosable: true,
     });
   };
 
   if (loading) {
-    return <Spinner />;
+    return <div>Loading...</div>;
   }
 
   return (
-    <Box>
-      <FormControl>
-        <FormLabel>Date Range</FormLabel>
+    <div>
+      <div>
+        <label>Date Range</label>
         <input
           type="date"
           value={dateRange.start}
           onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+          className="border rounded p-2"
         />
         <input
           type="date"
           value={dateRange.end}
           onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+          className="border rounded p-2"
         />
-      </FormControl>
-      <FormControl>
-        <FormLabel>Customer</FormLabel>
-        <Select onChange={(e) => setSelectedCustomer(e.target.value)}>
+      </div>
+      <div>
+        <label>Customer</label>
+        <select onChange={(e) => setSelectedCustomer(e.target.value)} className="border rounded p-2">
           {/* Options for customers will be populated here */}
-        </Select>
-      </FormControl>
-      <Button onClick={handleGenerateReport}>Generate Report</Button>
-      <Table>
-        <Thead>
-          <Tr>
-            <Th>Customer</Th>
-            <Th>Product</Th>
-            <Th>Revenue</Th>
-            <Th>Date</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
+        </select>
+      </div>
+      <button className="bg-blue-500 text-white p-2 rounded" onClick={handleGenerateReport}>
+        Generate Report
+      </button>
+      <table className="min-w-full border-collapse border border-gray-200">
+        <thead>
+          <tr>
+            <th className="border border-gray-300">Customer</th>
+            <th className="border border-gray-300">Product</th>
+            <th className="border border-gray-300">Revenue</th>
+            <th className="border border-gray-300">Date</th>
+          </tr>
+        </thead>
+        <tbody>
           {reportsData.map((report) => (
-            <Tr key={report.id}>
-              <Td>{report.customerName}</Td>
-              <Td>{report.productName}</Td>
-              <Td>{report.revenue}</Td>
-              <Td>{report.date}</Td>
-            </Tr>
+            <tr key={report.id}>
+              <td className="border border-gray-300">{report.customerName}</td>
+              <td className="border border-gray-300">{report.productName}</td>
+              <td className="border border-gray-300">{report.revenue}</td>
+              <td className="border border-gray-300">{report.date}</td>
+            </tr>
           ))}
-        </Tbody>
-      </Table>
-    </Box>
+        </tbody>
+      </table>
+    </div>
   );
 };
 

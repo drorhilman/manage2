@@ -1,125 +1,127 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Button, Select, FormControl, FormLabel, Input, Table, Thead, Tbody, Tr, Th, Td, Spinner, useToast } from '@chakra-ui/react';
-import { fetchOrders, fetchCustomers, fetchProducts, fetchJobDescriptions } from '../api'; // Assume these API functions are defined
+import React, { useState } from 'react';
+import { FaPlus } from 'react-icons/fa';
+import { useFirestore } from '../hooks/useFirestore';
+import DataTable from '../components/common/DataTable';
+import FormModal from '../components/common/FormModal';
+import OrderForm from '../components/orders/OrderForm';
+import { toaster } from '../components/ui/toaster';
 
 const Orders = () => {
-  const [orders, setOrders] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [jobDescriptions, setJobDescriptions] = useState([]);
-  const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const [jobDescription, setJobDescription] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [ordersPerPage] = useState(10);
+  const { data: orders, loading, error, add, update } = useFirestore('orders');
+  const { data: customers } = useFirestore('customers');
+  const { data: products } = useFirestore('products');
   const [dateFilter, setDateFilter] = useState('');
-  const toast = useToast();
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const ordersData = await fetchOrders();
-        const customersData = await fetchCustomers();
-        const productsData = await fetchProducts();
-        const jobDescriptionsData = await fetchJobDescriptions();
-        setOrders(ordersData);
-        setCustomers(customersData);
-        setProducts(productsData);
-        setJobDescriptions(jobDescriptionsData);
-      } catch (error) {
-        toast({
-          title: "Error loading data.",
-          description: error.message,
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, []);
-
-  const handleCreateOrder = () => {
-    // Logic to create a new order
-    toast({
-      title: "Order created.",
-      status: "success",
-      duration: 5000,
-      isClosable: true,
-    });
+  const handleAddOrder = () => {
+    setSelectedOrder(null);
+    setIsOpen(true);
   };
 
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const handleEditOrder = (order) => {
+    setSelectedOrder(order);
+    setIsOpen(true);
+  };
 
-  if (loading) {
-    return <Spinner />;
+  const handleSubmit = async (formData) => {
+    try {
+      const customer = customers.find(c => c.id === formData.customerId);
+      const product = products.find(p => p.id === formData.productId);
+      
+      const enrichedData = {
+        ...formData,
+        customerName: customer?.name,
+        productName: product?.name,
+        createdAt: new Date().toISOString()
+      };
+
+      if (selectedOrder) {
+        await update(selectedOrder.id, enrichedData);
+        toaster.success({
+          title: 'Order updated successfully',
+        });
+      } else {
+        await add(enrichedData);
+        toaster.success({
+          title: 'Order created successfully',
+        });
+      }
+      setIsOpen(false);
+    } catch (err) {
+      toaster.error({
+        title: 'Error',
+        description: err.message,
+      });
+    }
+  };
+
+  const filteredOrders = orders.filter(order => {
+    if (!dateFilter) return true;
+    return order.date === dateFilter;
+  });
+
+  const columns = [
+    { 
+      key: 'customerName', 
+      label: 'Customer',
+    },
+    { 
+      key: 'productName', 
+      label: 'Product',
+    },
+    { 
+      key: 'quantity', 
+      label: 'Quantity',
+    },
+    { 
+      key: 'date', 
+      label: 'Date',
+      render: (order) => new Date(order.date).toLocaleDateString()
+    }
+  ];
+
+  if (error) {
+    return <div>Error loading orders: {error.message}</div>;
   }
 
   return (
-    <Box>
-      <FormControl>
-        <FormLabel>Customer</FormLabel>
-        <Select onChange={(e) => setSelectedCustomer(e.target.value)}>
-          {customers.map((customer) => (
-            <option key={customer.id} value={customer.id}>{customer.name}</option>
-          ))}
-        </Select>
-      </FormControl>
-      <FormControl>
-        <FormLabel>Date</FormLabel>
-        <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
-      </FormControl>
-      <FormControl>
-        <FormLabel>Job Description</FormLabel>
-        <Select onChange={(e) => setJobDescription(e.target.value)}>
-          {jobDescriptions.map((job) => (
-            <option key={job.id} value={job.id}>{job.description}</option>
-          ))}
-        </Select>
-      </FormControl>
-      <FormControl>
-        <FormLabel>Product</FormLabel>
-        <Select onChange={(e) => setSelectedProduct(e.target.value)}>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>{product.name}</option>
-          ))}
-        </Select>
-      </FormControl>
-      <FormControl>
-        <FormLabel>Quantity</FormLabel>
-        <Input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-      </FormControl>
-      <Button onClick={handleCreateOrder}>Create Order</Button>
-      <Table>
-        <Thead>
-          <Tr>
-            <Th>Customer</Th>
-            <Th>Job Description</Th>
-            <Th>Product</Th>
-            <Th>Quantity</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {currentOrders.map((order) => (
-            <Tr key={order.id}>
-              <Td>{order.customerName}</Td>
-              <Td>{order.jobDescription}</Td>
-              <Td>{order.productName}</Td>
-              <Td>{order.quantity}</Td>
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
-      <Button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>Previous</Button>
-      <Button onClick={() => setCurrentPage(currentPage + 1)} disabled={indexOfLastOrder >= orders.length}>Next</Button>
-    </Box>
+    <div className="p-4">
+      <div className="flex mb-4 gap-2">
+        <div>
+          <label>Filter by Date</label>
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="border rounded p-2"
+          />
+        </div>
+        <button className="bg-blue-500 text-white p-2 rounded" onClick={handleAddOrder}>
+          <FaPlus /> New Order
+        </button>
+      </div>
+
+      <DataTable
+        data={filteredOrders}
+        columns={columns}
+        loading={loading}
+        emptyMessage="No orders found"
+        onRowClick={handleEditOrder}
+      />
+
+      <FormModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        title={selectedOrder ? 'Edit Order' : 'New Order'}
+        onSubmit={handleSubmit}
+      >
+        <OrderForm
+          initialData={selectedOrder}
+          onSubmit={handleSubmit}
+        />
+      </FormModal>
+    </div>
   );
 };
 

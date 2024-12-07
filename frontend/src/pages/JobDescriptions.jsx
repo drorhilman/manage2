@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { Box, Button, Input, Heading, List, ListItem, Spinner, useToast } from '@chakra-ui/react';
+import { toaster } from '../components/ui/toaster';
 
 const JobDescriptions = () => {
   const [jobDescriptions, setJobDescriptions] = useState([]);
   const [newJobDescription, setNewJobDescription] = useState('');
   const [loading, setLoading] = useState(true);
-  const toast = useToast();
-
   const jobDescriptionsCollectionRef = collection(db, 'jobDescriptions');
 
   const getJobDescriptions = async () => {
@@ -17,12 +15,9 @@ const JobDescriptions = () => {
       const data = await getDocs(jobDescriptionsCollectionRef);
       setJobDescriptions(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
     } catch (error) {
-      toast({
+      toaster.error({
         title: "Error loading job descriptions.",
         description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
       });
     } finally {
       setLoading(false);
@@ -33,19 +28,13 @@ const JobDescriptions = () => {
     try {
       await addDoc(jobDescriptionsCollectionRef, { description: newJobDescription });
       getJobDescriptions();
-      toast({
+      toaster.success({
         title: "Job description added.",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
       });
     } catch (error) {
-      toast({
+      toaster.error({
         title: "Error adding job description.",
         description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
       });
     }
   };
@@ -55,19 +44,13 @@ const JobDescriptions = () => {
       const jobDescriptionDoc = doc(db, 'jobDescriptions', id);
       await updateDoc(jobDescriptionDoc, { description: updatedDescription });
       getJobDescriptions();
-      toast({
+      toaster.success({
         title: "Job description updated.",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
       });
     } catch (error) {
-      toast({
+      toaster.error({
         title: "Error updating job description.",
         description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
       });
     }
   };
@@ -77,19 +60,13 @@ const JobDescriptions = () => {
       const jobDescriptionDoc = doc(db, 'jobDescriptions', id);
       await deleteDoc(jobDescriptionDoc);
       getJobDescriptions();
-      toast({
+      toaster.success({
         title: "Job description deleted.",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
       });
     } catch (error) {
-      toast({
+      toaster.error({
         title: "Error deleting job description.",
         description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
       });
     }
   };
@@ -99,30 +76,35 @@ const JobDescriptions = () => {
   }, []);
 
   if (loading) {
-    return <Spinner />;
+    return <div>Loading...</div>;
   }
 
   return (
-    <Box>
-      <Heading>Job Descriptions</Heading>
-      <Input
-        placeholder="New Job Description"
-        value={newJobDescription}
-        onChange={(e) => setNewJobDescription(e.target.value)}
-      />
-      <Button onClick={createJobDescription}>Add Job Description</Button>
-      <List>
+    <div>
+      <h1>Job Descriptions</h1>
+      <div>
+        <label>New Job Description</label>
+        <input
+          placeholder="New Job Description"
+          value={newJobDescription}
+          onChange={(e) => setNewJobDescription(e.target.value)}
+          className="border rounded p-2"
+        />
+      </div>
+      <button className="bg-blue-500 text-white p-2 rounded" onClick={createJobDescription}>Add Job Description</button>
+      <ul>
         {jobDescriptions.map((jobDescription) => (
-          <ListItem key={jobDescription.id}>
-            <Input
+          <li key={jobDescription.id} className="flex items-center justify-between">
+            <input
               value={jobDescription.description}
               onChange={(e) => updateJobDescription(jobDescription.id, e.target.value)}
+              className="border rounded p-2 flex-1"
             />
-            <Button onClick={() => deleteJobDescription(jobDescription.id)}>Delete</Button>
-          </ListItem>
+            <button className="bg-red-500 text-white p-1 rounded ml-2" onClick={() => deleteJobDescription(jobDescription.id)}>Delete</button>
+          </li>
         ))}
-      </List>
-    </Box>
+      </ul>
+    </div>
   );
 };
 

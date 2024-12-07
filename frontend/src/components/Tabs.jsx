@@ -1,18 +1,27 @@
-import { Tabs, TabList, Tab } from '@chakra-ui/react';
 import { NavLink } from 'react-router-dom';
 
 function NavigationTabs() {
   return (
-    <Tabs variant="soft-rounded" colorScheme="blue">
-      <TabList>
-        <Tab as={NavLink} to="/customers">Customers</Tab>
-        <Tab as={NavLink} to="/orders">Orders</Tab>
-        <Tab as={NavLink} to="/products">Products</Tab>
-        <Tab as={NavLink} to="/job-descriptions">Job Descriptions</Tab>
-        <Tab as={NavLink} to="/offers">Offers</Tab>
-        <Tab as={NavLink} to="/reports">Reports</Tab>
-      </TabList>
-    </Tabs>
+    <ul className="flex space-x-4 bg-blue-100 p-2 rounded-md">
+      <li>
+        <NavLink to="/customers" className="p-2 rounded hover:bg-blue-200">Customers</NavLink>
+      </li>
+      <li>
+        <NavLink to="/orders" className="p-2 rounded hover:bg-blue-200">Orders</NavLink>
+      </li>
+      <li>
+        <NavLink to="/products" className="p-2 rounded hover:bg-blue-200">Products</NavLink>
+      </li>
+      <li>
+        <NavLink to="/job-descriptions" className="p-2 rounded hover:bg-blue-200">Job Descriptions</NavLink>
+      </li>
+      <li>
+        <NavLink to="/offers" className="p-2 rounded hover:bg-blue-200">Offers</NavLink>
+      </li>
+      <li>
+        <NavLink to="/reports" className="p-2 rounded hover:bg-blue-200">Reports</NavLink>
+      </li>
+    </ul>
   );
 }
 

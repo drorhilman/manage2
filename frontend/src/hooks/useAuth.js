@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from 'react';
-import { auth, firestore } from '../firebase';
+import { auth, db } from '../firebase';
 
 export function useAuth() {
   const [user, setUser] = useState(null);
@@ -9,7 +8,7 @@ export function useAuth() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        const userDoc = await firestore.collection('users').doc(user.uid).get();
+        const userDoc = await db.collection('users').doc(user.uid).get();
         if (userDoc.exists && userDoc.data().whitelisted) {
           setIsWhitelisted(true);
         } else {
@@ -22,6 +21,18 @@ export function useAuth() {
         setIsWhitelisted(false);
       }
     });
+
+    // Temporary bypass for development mode
+    if (process.env.NODE_ENV === 'development') {
+        console.log('Development mode detected. Bypassing authentication.');
+      const mockUser = {
+        uid: 'mockUserId',
+        displayName: 'Mock User',
+        email: 'mockuser@example.com',
+      };
+      setUser(mockUser);
+      setIsWhitelisted(true); // Assume the mock user is whitelisted
+    }
 
     return () => unsubscribe();
   }, []);
